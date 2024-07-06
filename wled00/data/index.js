@@ -38,6 +38,11 @@ var hol = [
 	[0,0,1,1,"https://images.alphacoders.com/119/1198800.jpg"] // new year
 ];
 
+
+var bpm = 30;
+
+
+
 function handleVisibilityChange() {if (!d.hidden && new Date () - lastUpdate > 3000) requestJson();}
 function sCol(na, col) {d.documentElement.style.setProperty(na, col);}
 function gId(c) {return d.getElementById(c);}
@@ -1681,6 +1686,30 @@ function toggleNl()
 		showToast('Timer deactivated.');
 	}
 	var obj = {"nl": {"on": nlA}};
+	requestJson(obj);
+}
+
+const average = array => array.reduce((a, b) => a + b) / array.length;
+var bpmTaps = [];
+
+function calculateBpm()
+{
+	let millis = Date.now(); 
+	console.log(millis);
+	if (bpmTaps.length >= 5) {
+		bpmTaps.shift();
+	}
+	bpmTaps.push(millis);
+
+	let diffs = [];
+	for (let i = 0; i < bpmTaps.length - 1; i++) {
+		diffs.push(bpmTaps[i + 1] - bpmTaps[i]);
+	}
+	let avgMillisDiff = bpmTaps.length >=2 ? average(diffs) : 1000;
+	bpm = Math.round(60000 / avgMillisDiff);
+	showToast(bpm);
+
+	let obj = {"udpn": {"send": syncSend}};
 	requestJson(obj);
 }
 
