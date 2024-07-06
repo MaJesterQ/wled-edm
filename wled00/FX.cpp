@@ -7661,6 +7661,14 @@ static const char _data_FX_MODE_2DWAVINGCELL[] PROGMEM = "Waving Cell@!,,Amplitu
 
 #endif // WLED_DISABLE_2D
 
+//Custom
+uint16_t mode_solid_cock()
+{
+  SEGMENT.fill(SEGCOLOR(0));
+  glitter_base(SEGMENT.intensity, SEGCOLOR(2) ? SEGCOLOR(2) : ULTRAWHITE);
+  return FRAMETIME;
+}
+static const char _data_FX_MODE_SOLID_COCK[] PROGMEM = "Solid Cock@;;;;";
 
 //////////////////////////////////////////////////////////////////////////////////////////
 // mode data
@@ -7899,5 +7907,8 @@ void WS2812FX::setupEffectData() {
 
   addEffect(FX_MODE_2DAKEMI, &mode_2DAkemi, _data_FX_MODE_2DAKEMI); // audio
 #endif // WLED_DISABLE_2D
+
+// --- Custom effects ---
+  addEffect(FX_MODE_SOLID_COCK, &mode_solid_glitter, _data_FX_MODE_SOLID_COCK);
 
 }
