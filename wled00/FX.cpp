@@ -7661,14 +7661,91 @@ static const char _data_FX_MODE_2DWAVINGCELL[] PROGMEM = "Waving Cell@!,,Amplitu
 
 #endif // WLED_DISABLE_2D
 
-//Custom
+// Custom
 uint16_t mode_solid_cock()
 {
-  SEGMENT.fill(SEGCOLOR(0));
-  glitter_base(SEGMENT.intensity, SEGCOLOR(2) ? SEGCOLOR(2) : ULTRAWHITE);
+  typedef struct CockData
+  {
+    u_long lastMillis;
+    u_long nextMillis;
+    uint8_t colorWheelIndex;
+    unsigned long lastBpm;
+  } cockdata_t;
+
+  SEGMENT.fill(BLACK);
+
+  unsigned long currentBpm = bpm;
+  unsigned long localBpmMillis = lastBpmMillis;
+
+  unsigned long frameMillis = millis();
+
+  Serial.println("1");
+
+  const uint16_t cols = SEGMENT.virtualWidth();
+  const uint16_t rows = SEGMENT.virtualHeight();
+
+  const int middle_col = int(round(cols / 2));
+  const int middle_rows = int(round(rows / 2));
+
+  const int max_r = middle_col + 2;
+
+  Serial.println("2");
+
+  uint16_t dataSize = sizeof(cockdata_t);
+  if (!SEGENV.allocateData(dataSize))
+    return mode_static(); // allocation failed
+
+  Serial.println("3");
+
+  cockdata_t *cock = reinterpret_cast<cockdata_t *>(SEGENV.data);
+  unsigned long localLastMillis = cock->lastMillis;
+  unsigned long localNextMillis = cock->nextMillis;
+  unsigned long lastBpm = cock->lastBpm == 0 ? 1 : cock->lastBpm;
+
+  Serial.println(lastBpm);
+  unsigned long my_step = long(60000 / lastBpm);
+
+  Serial.println("4");
+
+
+  printf("cock->nextMillis %d, cock->nextMillis %d, currentBpm %d", localLastMillis, localNextMillis, currentBpm);
+  if (localLastMillis == 0 || localNextMillis == 0 || lastBpm != currentBpm)
+  {
+    Serial.println("return Frame");
+    cock->colorWheelIndex = random8();
+    cock->lastMillis = u_long(frameMillis - frameMillis % my_step);
+    cock->nextMillis = u_long(my_step - frameMillis % my_step + frameMillis);
+    cock->lastBpm = currentBpm;
+
+    return FRAMETIME;
+  }
+
+  Serial.println("5");
+
+  uint16_t frameDiff = (frameMillis - localLastMillis) == 0 ? 1 : (frameMillis - localLastMillis);
+
+  const uint16_t new_r = uint16_t(ceil(frameDiff / (my_step / max_r)));
+
+  SEGMENT.fill_circle(middle_col, middle_rows, new_r, SEGMENT.color_wheel(cock->colorWheelIndex));
+
+  printf("precock->nextMillis %d, frameMillis %d", localNextMillis, frameMillis);
+
+  if (cock->nextMillis < frameMillis)
+  {
+    Serial.println("next beat");
+    printf("cock->nextMillis %d, frameMillis %d", localNextMillis, frameMillis);
+    cock->colorWheelIndex = uint8_t((cock->colorWheelIndex + 47) % 255);
+
+    cock->lastMillis = u_long(frameMillis - frameMillis % my_step);
+    cock->nextMillis = u_long(my_step - frameMillis % my_step + frameMillis);
+  }
+
+  SEGMENT.blur(50);
+
   return FRAMETIME;
 }
 static const char _data_FX_MODE_SOLID_COCK[] PROGMEM = "Solid Cock@;;;;";
+
 
 //////////////////////////////////////////////////////////////////////////////////////////
 // mode data

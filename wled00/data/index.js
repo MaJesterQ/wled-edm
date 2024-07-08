@@ -1695,7 +1695,6 @@ var bpmTaps = [];
 function calculateBpm()
 {
 	let millis = Date.now(); 
-	console.log(millis);
 	if (bpmTaps.length >= 5) {
 		bpmTaps.shift();
 	}
@@ -1709,7 +1708,7 @@ function calculateBpm()
 	bpm = Math.round(60000 / avgMillisDiff);
 	showToast(bpm);
 
-	let obj = {"udpn": {"send": syncSend}};
+	let obj = {"bpm": bpm == 0 ? 1 : bpm, "lastBpmMillis": millis == 0 ? 1 : millis};
 	requestJson(obj);
 }
 

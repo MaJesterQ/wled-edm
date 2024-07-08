@@ -307,6 +307,13 @@ bool deserializeSegment(JsonObject elem, byte it, byte presetId)
 // presetId is non-0 if called from handlePreset()
 bool deserializeState(JsonObject root, byte callMode, byte presetId)
 {
+  if (root.containsKey("bpm")) {
+    bpm = root["bpm"];
+    lastBpmMillis = root["lastBpmMillis"];
+    // getVal(root["bpm"], &bpm);
+    // getVal(root["lastBpm"], &lastBpm);
+  }
+
   bool stateResponse = root[F("v")] | false;
 
   #if defined(WLED_DEBUG) && defined(WLED_DEBUG_HOST)

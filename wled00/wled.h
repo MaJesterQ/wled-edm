@@ -369,6 +369,10 @@ WLED_GLOBAL NodesMap Nodes;
 WLED_GLOBAL bool nodeListEnabled _INIT(true);
 WLED_GLOBAL bool nodeBroadcastEnabled _INIT(true);
 
+// CUSTOM BPM
+WLED_GLOBAL unsigned long bpm              _INIT(60ul);          // global BPM
+WLED_GLOBAL unsigned long lastBpmMillis    _INIT(1ul);          // global last BPM click
+
 WLED_GLOBAL byte buttonType[WLED_MAX_BUTTONS]  _INIT({BTN_TYPE_PUSH});
 #if defined(IRTYPE) && defined(IRPIN)
 WLED_GLOBAL byte irEnabled      _INIT(IRTYPE); // Infrared receiver
