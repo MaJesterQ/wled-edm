@@ -38,8 +38,8 @@ var hol = [
 	[0,0,1,1,"https://images.alphacoders.com/119/1198800.jpg"] // new year
 ];
 
-
 var bpm = 30;
+var lastBpmMillis = 1;
 
 
 
@@ -607,6 +607,9 @@ function populatePresets(fromls)
 }
 
 function parseInfo(i) {
+	console.log("parse info");
+	console.log(i);
+
 	lastinfo = i;
 	var name = i.name;
 	gId('namelabel').innerHTML = name;
@@ -659,6 +662,8 @@ function parseInfo(i) {
 
 function populateInfo(i)
 {
+	console.log("populateInfo");
+	console.log(i);
 	var cn="";
 	var heap = i.freeheap/1024;
 	heap = heap.toFixed(1);
@@ -1317,14 +1322,21 @@ function cmpP(a, b)
 }
 
 function makeWS() {
+	console.log("makeWS")
 	if (ws || lastinfo.ws < 0) return;
 	let url = loc ? getURL('/ws').replace("http","ws") : "ws://"+window.location.hostname+"/ws";
 	ws = new WebSocket(url);
 	ws.binaryType = "arraybuffer";
 	ws.onmessage = (e)=>{
+		console.log("wakews onmessage");
+		console.log(e);
 		if (e.data instanceof ArrayBuffer) return; // liveview packet
 		var json = JSON.parse(e.data);
-		if (json.leds) return; // JSON liveview packet
+		console.log(json);
+		if (json.leds) {
+			console.log("live");
+			return;
+		}; // JSON liveview packet
 		clearTimeout(jsonTimeout);
 		jsonTimeout = null;
 		lastUpdate = new Date();
@@ -1355,6 +1367,12 @@ function makeWS() {
 
 function readState(s,command=false)
 {
+	console.log("readState")
+
+	bpm = s.bpm;
+	lastBpmMillis = s.lastBpmMillis;
+
+	console.log(s)
 	if (!s) return false;
 	if (s.success) return true; // no data to process
 
@@ -1598,6 +1616,9 @@ var reqsLegal = false;
 
 function requestJson(command=null)
 {
+	console.log("requestJson" + command);
+	console.log(command)
+
 	gId('connind').style.backgroundColor = "var(--c-y)";
 	if (command && !reqsLegal) return; // stop post requests from chrome onchange event on page restore
 	if (!jsonTimeout) jsonTimeout = setTimeout(()=>{if (ws) ws.close(); ws=null; showErrorToast()}, 3000);
@@ -1618,6 +1639,8 @@ function requestJson(command=null)
 	};
 
 	if (useWs) {
+		console.log("useWs");
+		console.log(req);
 		ws.send(req?req:'{"v":true}');
 		return;
 	}
@@ -1630,12 +1653,15 @@ function requestJson(command=null)
 		body: req
 	})
 	.then(res => {
+		console.log("res");
+		console.log(res);
 		clearTimeout(jsonTimeout);
 		jsonTimeout = null;
 		if (!res.ok) showErrorToast();
 		return res.json();
 	})
 	.then(json => {
+		console.log("then " + json);
 		lastUpdate = new Date();
 		clearErrorToast(3000);
 		gId('connind').style.backgroundColor = "var(--c-g)";
@@ -1705,10 +1731,12 @@ function calculateBpm()
 		diffs.push(bpmTaps[i + 1] - bpmTaps[i]);
 	}
 	let avgMillisDiff = bpmTaps.length >=2 ? average(diffs) : 1000;
+	
 	bpm = Math.round(60000 / avgMillisDiff);
+	lastBpmMillis = millis % Math.round(60000 / bpm);
 	showToast(bpm);
 
-	let obj = {"bpm": bpm == 0 ? 1 : bpm, "lastBpmMillis": millis == 0 ? 1 : millis};
+	let obj = {"bpm": bpm == 0 ? 1 : bpm, "lastBpmMillis": lastBpmMillis == 0 ? 1 : lastBpmMillis, "bri": Math.floor(Math.random() * 250)};
 	requestJson(obj);
 }
 
@@ -2294,6 +2322,7 @@ function setPalette(paletteId = null)
 
 function setBri()
 {
+	console.log("setBri")
 	var obj = {"bri": parseInt(gId('sliderBri').value)};
 	requestJson(obj);
 }

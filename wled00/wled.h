@@ -370,8 +370,9 @@ WLED_GLOBAL bool nodeListEnabled _INIT(true);
 WLED_GLOBAL bool nodeBroadcastEnabled _INIT(true);
 
 // CUSTOM BPM
-WLED_GLOBAL unsigned long bpm              _INIT(60ul);          // global BPM
-WLED_GLOBAL unsigned long lastBpmMillis    _INIT(1ul);          // global last BPM click
+WLED_GLOBAL uint16_t bpm              _INIT(60);          // global BPM
+WLED_GLOBAL uint16_t lastBpm          _INIT(60);          // global BPM
+WLED_GLOBAL uint16_t lastBpmMillis    _INIT(1);          // global last BPM click
 
 WLED_GLOBAL byte buttonType[WLED_MAX_BUTTONS]  _INIT({BTN_TYPE_PUSH});
 #if defined(IRTYPE) && defined(IRPIN)

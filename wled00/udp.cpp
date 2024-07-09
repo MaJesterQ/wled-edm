@@ -5,8 +5,8 @@
  */
 
 #define UDP_SEG_SIZE 36
-#define SEG_OFFSET (41+(MAX_NUM_SEGMENTS*UDP_SEG_SIZE))
-#define WLEDPACKETSIZE (41+(MAX_NUM_SEGMENTS*UDP_SEG_SIZE)+0)
+#define SEG_OFFSET (45+(MAX_NUM_SEGMENTS*UDP_SEG_SIZE))
+#define WLEDPACKETSIZE (45+(MAX_NUM_SEGMENTS*UDP_SEG_SIZE)+0)
 #define UDP_IN_MAXSIZE 1472
 #define PRESUMED_NETWORK_DELAY 3 //how many ms could it take on avg to reach the receiver? This will be added to transmitted times
 
@@ -31,6 +31,8 @@ void notify(byte callMode, bool followUp)
   udpOut[0] = 0; //0: wled notifier protocol 1: WARLS protocol
   udpOut[1] = callMode;
   udpOut[2] = bri;
+  printf("bri check  %d -", bri);
+
   uint32_t col = mainseg.colors[0];
   udpOut[3] = R(col);
   udpOut[4] = G(col);
@@ -91,11 +93,25 @@ void notify(byte callMode, bool followUp)
 
   udpOut[39] = strip.getActiveSegmentsNum();
   udpOut[40] = UDP_SEG_SIZE; //size of each loop iteration (one segment)
+
+  // custom bpm params
+  Serial.println("Udp out");
+  Serial.println(bpm);
+  Serial.println(lastBpmMillis);
+
+  udpOut[41] = (bpm >> 8) & 0xFF;
+  udpOut[42] = (bpm >> 0) & 0xFF;
+  udpOut[43] = (lastBpmMillis >> 8) & 0xFF;
+  udpOut[44] = (lastBpmMillis >> 0) & 0xFF;
+
+  printf("Bytes out %x %x %x %x", udpOut[41], udpOut[42], udpOut[43], udpOut[44]);
+
+
   size_t s = 0, nsegs = strip.getSegmentsNum();
   for (size_t i = 0; i < nsegs; i++) {
     Segment &selseg = strip.getSegment(i);
     if (!selseg.isActive()) continue;
-    uint16_t ofs = 41 + s*UDP_SEG_SIZE; //start of segment offset byte
+    uint16_t ofs = 45 + s*UDP_SEG_SIZE; //start of segment offset byte
     udpOut[0 +ofs] = s;
     udpOut[1 +ofs] = selseg.start >> 8;
     udpOut[2 +ofs] = selseg.start & 0xFF;
@@ -357,11 +373,12 @@ void handleNotifications()
     bool applyEffects = (receiveNotificationEffects || !someSel);
     if (version < 200)
     {
+      Serial.println("366");
       if (applyEffects && currentPlaylist >= 0) unloadPlaylist();
       if (version > 10 && (receiveSegmentOptions || receiveSegmentBounds)) {
         uint8_t numSrcSegs = udpIn[39];
         for (size_t i = 0; i < numSrcSegs; i++) {
-          uint16_t ofs = 41 + i*udpIn[40]; //start of segment offset byte
+          uint16_t ofs = 45 + i*udpIn[40]; //start of segment offset byte
           uint8_t id = udpIn[0 +ofs];
           if (id > strip.getSegmentsNum()) break;
 
@@ -440,6 +457,7 @@ void handleNotifications()
     //adjust system time, but only if sender is more accurate than self
     if (version > 7 && version < 200)
     {
+      Serial.println("449");
       Toki::Time tm;
       tm.sec = (udpIn[30] << 24) | (udpIn[31] << 16) | (udpIn[32] << 8) | (udpIn[33]);
       tm.ms = (udpIn[34] << 8) | (udpIn[35]);
@@ -458,6 +476,24 @@ void handleNotifications()
         } else {
           strip.timebase -= diff;
         }
+      }
+    }
+
+    if (version >= 12) {
+      Serial.println("udpIn bpm");
+      printf("Bytes %x %x %x %x", udpIn[41], udpIn[42], udpIn[43], udpIn[44]);
+      
+      
+      bpm = (udpIn[41] << 8 | udpIn[42]);
+      Serial.println(bpm);
+
+      lastBpmMillis = (udpIn[43] << 8 | udpIn[44]);
+      Serial.println(lastBpmMillis);
+
+      if (bpm != lastBpm) {
+        Serial.println("bpm change detected");
+        lastBpm = bpm;
+        stateChanged = true;
       }
     }
 

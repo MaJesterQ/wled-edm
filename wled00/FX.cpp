@@ -7679,8 +7679,6 @@ uint16_t mode_solid_cock()
 
   unsigned long frameMillis = millis();
 
-  Serial.println("1");
-
   const uint16_t cols = SEGMENT.virtualWidth();
   const uint16_t rows = SEGMENT.virtualHeight();
 
@@ -7689,29 +7687,20 @@ uint16_t mode_solid_cock()
 
   const int max_r = middle_col + 2;
 
-  Serial.println("2");
-
   uint16_t dataSize = sizeof(cockdata_t);
   if (!SEGENV.allocateData(dataSize))
     return mode_static(); // allocation failed
-
-  Serial.println("3");
 
   cockdata_t *cock = reinterpret_cast<cockdata_t *>(SEGENV.data);
   unsigned long localLastMillis = cock->lastMillis;
   unsigned long localNextMillis = cock->nextMillis;
   unsigned long lastBpm = cock->lastBpm == 0 ? 1 : cock->lastBpm;
 
-  Serial.println(lastBpm);
+  Serial.println(String(lastBpm) + " " + String(currentBpm));
   unsigned long my_step = long(60000 / lastBpm);
 
-  Serial.println("4");
-
-
-  printf("cock->nextMillis %d, cock->nextMillis %d, currentBpm %d", localLastMillis, localNextMillis, currentBpm);
   if (localLastMillis == 0 || localNextMillis == 0 || lastBpm != currentBpm)
   {
-    Serial.println("return Frame");
     cock->colorWheelIndex = random8();
     cock->lastMillis = u_long(frameMillis - frameMillis % my_step);
     cock->nextMillis = u_long(my_step - frameMillis % my_step + frameMillis);
@@ -7720,7 +7709,6 @@ uint16_t mode_solid_cock()
     return FRAMETIME;
   }
 
-  Serial.println("5");
 
   uint16_t frameDiff = (frameMillis - localLastMillis) == 0 ? 1 : (frameMillis - localLastMillis);
 
@@ -7728,19 +7716,15 @@ uint16_t mode_solid_cock()
 
   SEGMENT.fill_circle(middle_col, middle_rows, new_r, SEGMENT.color_wheel(cock->colorWheelIndex));
 
-  printf("precock->nextMillis %d, frameMillis %d", localNextMillis, frameMillis);
-
   if (cock->nextMillis < frameMillis)
   {
-    Serial.println("next beat");
-    printf("cock->nextMillis %d, frameMillis %d", localNextMillis, frameMillis);
     cock->colorWheelIndex = uint8_t((cock->colorWheelIndex + 47) % 255);
 
     cock->lastMillis = u_long(frameMillis - frameMillis % my_step);
     cock->nextMillis = u_long(my_step - frameMillis % my_step + frameMillis);
   }
 
-  SEGMENT.blur(50);
+  SEGMENT.blur(75);
 
   return FRAMETIME;
 }
@@ -7986,6 +7970,6 @@ void WS2812FX::setupEffectData() {
 #endif // WLED_DISABLE_2D
 
 // --- Custom effects ---
-  addEffect(FX_MODE_SOLID_COCK, &mode_solid_glitter, _data_FX_MODE_SOLID_COCK);
+  addEffect(FX_MODE_SOLID_COCK, &mode_solid_cock, _data_FX_MODE_SOLID_COCK);
 
 }

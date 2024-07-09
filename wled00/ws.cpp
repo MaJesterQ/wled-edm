@@ -13,6 +13,7 @@ unsigned long wsLastLiveTime = 0;
 
 void wsEvent(AsyncWebSocket * server, AsyncWebSocketClient * client, AwsEventType type, void * arg, uint8_t *data, size_t len)
 {
+  Serial.println("wsEvent");
   if(type == WS_EVT_CONNECT){
     //client connected
     DEBUG_PRINTLN(F("WS client connected."));
@@ -39,7 +40,13 @@ void wsEvent(AsyncWebSocket * server, AsyncWebSocketClient * client, AwsEventTyp
         if (!requestJSONBufferLock(11)) return;
 
         DeserializationError error = deserializeJson(doc, data, len);
+
         JsonObject root = doc.as<JsonObject>();
+
+        String json;
+        serializeJson(root, json);
+        printf("[inside ws event] output json: %s\n", json.c_str());
+
         if (error || root.isNull()) {
           releaseJSONBufferLock();
           return;
@@ -98,6 +105,7 @@ void wsEvent(AsyncWebSocket * server, AsyncWebSocketClient * client, AwsEventTyp
 
 void sendDataWs(AsyncWebSocketClient * client)
 {
+  Serial.println("sendDataWs");
   if (!ws.count()) return;
   AsyncWebSocketMessageBuffer * buffer;
 
@@ -107,6 +115,10 @@ void sendDataWs(AsyncWebSocketClient * client)
   serializeState(state);
   JsonObject info  = doc.createNestedObject("info");
   serializeInfo(info);
+
+  String json;
+  serializeJson(state, json);
+  printf("[sendDataWs] output json: %s\n", json.c_str());
 
   size_t len = measureJson(doc);
   DEBUG_PRINTF("JSON buffer size: %u for WS request (%u).\n", doc.memoryUsage(), len);
@@ -138,14 +150,10 @@ void sendDataWs(AsyncWebSocketClient * client)
   buffer->lock();
   serializeJson(doc, (char *)buffer->get(), len);
 
-  DEBUG_PRINT(F("Sending WS data "));
-  if (client) {
-    client->text(buffer);
-    DEBUG_PRINTLN(F("to a single client."));
-  } else {
-    ws.textAll(buffer);
-    DEBUG_PRINTLN(F("to multiple clients."));
-  }
+  Serial.println(F("Sending WS data "));
+  ws.textAll(buffer);
+
+
   buffer->unlock();
   ws._cleanBuffers();
 

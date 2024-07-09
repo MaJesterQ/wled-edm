@@ -307,12 +307,24 @@ bool deserializeSegment(JsonObject elem, byte it, byte presetId)
 // presetId is non-0 if called from handlePreset()
 bool deserializeState(JsonObject root, byte callMode, byte presetId)
 {
+  Serial.println("deserializeState");
+
+  String json;
+  serializeJson(root, json);
+  printf("[JSON] output json: %s, callmode \n", json.c_str(), callMode);
+
   if (root.containsKey("bpm")) {
-    bpm = root["bpm"];
-    lastBpmMillis = root["lastBpmMillis"];
-    // getVal(root["bpm"], &bpm);
-    // getVal(root["lastBpm"], &lastBpm);
+    bpm = root[F("bpm")];
+    lastBpmMillis = root[F("lastBpmMillis")];
+
+    if (bpm != lastBpm) {
+        Serial.println("bpm change detected");
+        lastBpm = bpm;
+        stateChanged = true;
+    }
+    printf("bpm %d, lastBpmMillis %d, bri %d", bpm, lastBpmMillis, root["bri"]);
   }
+  
 
   bool stateResponse = root[F("v")] | false;
 
@@ -558,11 +570,17 @@ void serializeSegment(JsonObject& root, Segment& seg, byte id, bool forPreset, b
 
 void serializeState(JsonObject root, bool forPreset, bool includeBri, bool segmentBounds, bool selectedSegmentsOnly)
 {
+  Serial.println("serializeState");
+
   if (includeBri) {
     root["on"] = (bri > 0);
     root["bri"] = briLast;
     root[F("transition")] = transitionDelay/100; //in 100ms
   }
+
+  root["bpm"] = bpm;
+  root["lastBpmMillis"] = lastBpmMillis;
+  Serial.println(lastBpmMillis);
 
   if (!forPreset) {
     if (errorFlag) {root[F("error")] = errorFlag; errorFlag = ERR_NONE;} //prevent error message to persist on screen

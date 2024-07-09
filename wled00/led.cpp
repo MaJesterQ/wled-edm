@@ -96,11 +96,13 @@ void applyFinalBri() {
 //called after every state changes, schedules interface updates, handles brightness transition and nightlight activation
 //unlike colorUpdated(), does NOT apply any colors or FX to segments
 void stateUpdated(byte callMode) {
+  Serial.println("stateUpdated");
   //call for notifier -> 0: init 1: direct change 2: button 3: notification 4: nightlight 5: other (No notification)
   //                     6: fx changed 7: hue 8: preset cycle 9: blynk 10: alexa 11: ws send only 12: button preset
   setValuesFromFirstSelectedSeg();
 
   if (bri != briOld || stateChanged) {
+    Serial.println("stateUpdated bri"); 
     if (stateChanged) currentPreset = 0; //something changed, so we are no longer in the preset
 
     if (callMode != CALL_MODE_NOTIFICATION && callMode != CALL_MODE_NO_NOTIFY) notify(callMode);
